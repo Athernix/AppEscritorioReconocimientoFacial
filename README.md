@@ -39,50 +39,38 @@ Además, se prioriza una **interfaz intuitiva, profesional y adaptable**, acompa
 ---
 
 ## 🧱 Estructura del Proyecto
-
 reconocimiento_facial/
 │
-├── aplicacion/                          
-│   ├── nucleo/                          
-│   │   ├── camara.py                    ← Control de cámara y flujo de video
-│   │   ├── reconocimiento.py            ← Detección y reconocimiento facial
-│   │   ├── base_datos.py                ← Gestión y conexión con la base de datos
-│   │   └── utilidades.py                ← Funciones auxiliares (logs, validaciones, etc.)
+├── 📁 aplicacion/                          
+│   ├── 📁 nucleo/                          
+│   │   ├── camara.py                    # Control de cámara y video
+│   │   ├── reconocimiento.py            # Lógica de reconocimiento facial
+│   │   ├── base_datos.py                # Gestión de base de datos
+│   │   └── utilidades.py                # Funciones auxiliares
 │   │
-│   ├── interfaz/                        
-│   │   ├── ventana_principal.py         ← Ventana principal de la app
-│   │   ├── ventana_login.py             ← Pantalla de inicio de sesión
-│   │   ├── ventana_registro.py          ← Pantalla de registro facial/usuario
-│   │   └── estilos/
-│   │       └── estilo.qss               ← Estilos globales (colores, fuentes, botones)
+│   ├── 📁 interfaz/                        
+│   │   ├── ventana_principal.py         # Ventana principal
+│   │   ├── ventana_login.py             # Pantalla de login
+│   │   ├── ventana_registro.py          # Registro de usuarios
+│   │   └── 📁 estilos/
+│   │       └── estilo.qss               # Estilos visuales
 │   │
-│   ├── modelos/                         
-│   │   ├── usuario.py                   ← Clase Usuario (ID, nombre, vector facial)
-│   │   └── configuracion.py             ← Configuraciones del sistema (rutas, cámara, etc.)
+│   ├── 📁 modelos/                         
+│   │   ├── usuario.py                   # Modelo de usuario
+│   │   └── configuracion.py             # Configuraciones del sistema
 │   │
-│   ├── recursos/                        
-│   │   ├── iconos/                      ← Íconos, logos e imágenes
-│   │   ├── modelos_xml/                 ← Modelos preentrenados (Haarcascade, etc.)
-│   │   └── fuentes/                     ← Tipografías personalizadas
+│   ├── 📁 recursos/                        
+│   │   ├── 📁 iconos/                   # Recursos gráficos
+│   │   ├── 📁 modelos_xml/              # Modelos preentrenados
+│   │   └── 📁 fuentes/                  # Tipografías
 │   │
-│   ├── main.py                          ← Punto de entrada principal
+│   ├── main.py                          # Punto de entrada
 │   └── __init__.py                      
 │
-├── pruebas/                             
-│   ├── prueba_camara.py
-│   ├── prueba_reconocimiento.py
-│   └── prueba_interfaz.py
-│
-├── datos/                               
-│   ├── rostros/                         ← Imágenes de rostros capturados
-│   ├── vectores/                        ← Vectores de características faciales
-│   └── base_datos.db                    ← Base de datos SQLite
-│
-├── requirements.txt                     ← Dependencias del proyecto
-├── README.md                            ← Documentación general
-├── .gitignore                           ← Archivos ignorados por Git
-└── setup.py                             ← (Opcional) Instalador o empaquetador
-
+├── 📁 pruebas/                             # Tests del sistema
+├── 📁 datos/                              # Datos generados
+├── requirements.txt                      # Dependencias
+└── README.md                            # Documentación
 
 
 ### 🗂️ Explicación de Carpetas
