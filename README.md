@@ -31,7 +31,7 @@ Además, se prioriza una **interfaz intuitiva, profesional y adaptable**, acompa
 - 🧑‍💼 **Registro de nuevos usuarios** con almacenamiento de imágenes y vectores de características.  
 - 🔒 **Inicio de sesión facial o con credenciales convencionales.**  
 - 🎨 **Interfaz moderna, personalizable y responsiva** usando PySide6 y estilos `.qss`.  
-- 🗃️ **Base de datos SQLite** para gestionar usuarios, configuraciones y registros faciales.  
+- 🗃️ **Base de datos** para gestionar usuarios, configuraciones y registros faciales.  
 - ⚙️ **Código modular y documentado**, optimizado para futuras mejoras.  
 - 💬 **Mensajes interactivos y notificaciones visuales** para mejorar la experiencia del usuario.  
 - 🧠 **Posibilidad de integrar modelos avanzados** de reconocimiento facial como FaceNet o DeepFace.  
@@ -76,12 +76,15 @@ reconocimiento_facial/
 ├── datos/                               
 │   ├── rostros/                         ← Imágenes de rostros capturados
 │   ├── vectores/                        ← Vectores de características faciales
-│   └── base_datos.db                    ← Base de datos
+│   └── base_datos.db                    ← Base de datos SQLite
 │
 ├── requirements.txt                     ← Dependencias del proyecto
 ├── README.md                            ← Documentación general
 ├── .gitignore                           ← Archivos ignorados por Git
-```
+└── setup.py                             ← (Opcional) Instalador o empaquetador
+
+
+
 ### 🗂️ Explicación de Carpetas
 
 | Carpeta / Archivo | Función |
