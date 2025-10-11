@@ -1,0 +1,14 @@
+[
+    {
+        "nombre": "Alejandro",
+        "usuario": "130376",
+        "contrasena": "123",
+        "rostro": "Datos/rostros/130376.png"
+    },
+    {
+        "nombre": "David",
+        "usuario": "13",
+        "contrasena": "123",
+        "rostro": "Datos/rostros/13.png"
+    }
+]

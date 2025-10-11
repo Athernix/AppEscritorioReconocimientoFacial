@@ -76,13 +76,12 @@ reconocimiento_facial/
 ├── datos/                               
 │   ├── rostros/                         ← Imágenes de rostros capturados
 │   ├── vectores/                        ← Vectores de características faciales
-│   └── base_datos.db                    ← Base de datos SQLite
+│   └── base_datos.db                    ← Base de datos 
 │
 ├── requirements.txt                     ← Dependencias del proyecto
 ├── README.md                            ← Documentación general
-├── .gitignore                           ← Archivos ignorados por Git
-└── setup.py                             ← (Opcional) Instalador o empaquetador
-
+└── .gitignore                           ← Archivos ignorados por Git
+```
 
 
 ### 🗂️ Explicación de Carpetas

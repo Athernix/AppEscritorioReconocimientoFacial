@@ -1,30 +1,24 @@
-# Nucleo/Camara.py
-import cv2  # Importar librería de OpenCV
+import cv2
 
+class Camara:
+    def __init__(self, index=0):
+        self.index = index
+        self.captura = None
 
-def iniciar_video():
-    """Inicia la cámara y muestra el video en una ventana hasta que se presione 'q'."""
-    camara = cv2.VideoCapture(0)
+    def iniciar(self):
+        """Inicia la captura de video"""
+        self.captura = cv2.VideoCapture(self.index)
+        return self.captura.isOpened()
 
-    if not camara.isOpened():
-        print("❌ No se pudo acceder a la cámara.")
-        return
+    def obtener_frame(self):
+        """Obtiene un frame de la cámara"""
+        if self.captura and self.captura.isOpened():
+            ret, frame = self.captura.read()
+            return frame if ret else None
+        return None
 
-    print("✅ Cámara iniciada. Presiona 'q' para salir.")
-
-    while True:
-        ret, frame = camara.read()
-        if not ret:
-            print("Error al leer el cuadro de la cámara.")
-            break
-
-        # Mostrar el cuadro en una ventana
-        cv2.imshow('Cámara - Prueba', frame)
-
-        # Salir si se presiona la tecla 'q'
-        if cv2.waitKey(1) & 0xFF == ord('q'):
-            break
-
-    # Liberar recursos
-    camara.release()
-    cv2.destroyAllWindows()
+    def detener(self):
+        """Detiene la captura de video"""
+        if self.captura:
+            self.captura.release()
+            self.captura = None

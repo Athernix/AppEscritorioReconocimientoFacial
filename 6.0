@@ -1,0 +1,15 @@
+Collecting face-recognition-models
+  Using cached face_recognition_models-0.3.0-py2.py3-none-any.whl
+Collecting Click
+  Using cached click-8.3.0-py3-none-any.whl.metadata (2.6 kB)
+Requirement already satisfied: numpy in d:\users\alejandro\desktop\proyecto-grado\appescritorioreconocimientofacial\reconocimiento_venv\lib\site-packages (2.3.3)
+Collecting Pillow
+  Using cached pillow-11.3.0-cp312-cp312-win_amd64.whl.metadata (9.2 kB)
+Collecting colorama
+  Using cached colorama-0.4.6-py2.py3-none-any.whl.metadata (17 kB)
+Using cached click-8.3.0-py3-none-any.whl (107 kB)
+Using cached pillow-11.3.0-cp312-cp312-win_amd64.whl (7.0 MB)
+Using cached colorama-0.4.6-py2.py3-none-any.whl (25 kB)
+Installing collected packages: face-recognition-models, Pillow, colorama, Click
+
+Successfully installed Click-8.3.0 Pillow-11.3.0 colorama-0.4.6 face-recognition-models-0.3.0
