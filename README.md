@@ -103,6 +103,98 @@ reconocimiento_facial/
 
 ## ⚙️ Instalación y Configuración
 
+# 🧰 Requerimientos para ejecutar el programa
+
+## 📌 Dependencias principales
+- **Python:** `3.12.4`  
+El programa está desarrollado y probado para esta versión.
+
+---
+
+## 🖥️ Dependencias del sistema
+
+### Para sistemas basados en Debian/Ubuntu:
+```bash
+sudo apt-get update
+sudo apt-get install -y python3-dev python3-pip build-essential cmake
+sudo apt-get install -y libgl1-mesa-glx libglib2.0-0 libsm6 libxext6 libxrender-dev
+```
+
+### Para Windows:
+> Usar `pip` normalmente es suficiente para instalar las dependencias de Python.
+
+---
+
+## 🐍 Dependencias de Python
+
+Crea un archivo **`requirements.txt`** con el siguiente contenido:
+
+```
+opencv-python==4.8.1.78
+PySide6==6.7.0
+numpy==1.26.0
+deepface==0.0.89
+```
+
+---
+
+## 📦 Instalación de dependencias
+
+Instalar todas las dependencias de una sola vez:
+
+```bash
+pip install -r requirements.txt
+```
+
+O instalarlas individualmente:
+
+```bash
+pip install opencv-python==4.8.1.78
+pip install PySide6==6.7.0
+pip install numpy==1.26.0
+pip install deepface==0.0.89
+```
+
+
+## ⚠️ Notas importantes
+
+### Sobre DeepFace
+- DeepFace instalará automáticamente dependencias como TensorFlow.
+- La primera ejecución puede ser lenta, ya que descargará modelos pre-entrenados.
+- Se recomienda buena conexión a internet para la primera ejecución.
+
+### Compatibilidad
+- Código probado con **Python 3.12.4**.
+- Las versiones especificadas garantizan compatibilidad.
+- Si hay problemas con **PySide6**, se puede usar **PyQt6** como alternativa.
+
+### Recursos del sistema
+- Mínimo **4 GB de RAM**.
+- Cámara web funcionando.
+- Espacio en disco para modelos de DeepFace (~500 MB).
+
+---
+
+## ▶️ Comando de ejecución
+
+Desde el directorio principal del proyecto:
+
+```bash
+python Interfaz/Ventana_Principal.py
+```
+
+---
+
+## 🧭 Solución de problemas comunes
+
+Si encuentras errores:
+
+- ✅ Verifica que todas las dependencias estén instaladas.  
+- 🐍 Asegúrate de tener **Python 3.12.4**.  
+- 📸 Revisa que la cámara web esté funcionando.  
+- 🛡️ Ejecuta como administrador si hay problemas de permisos.
+
+
 ### 1️⃣ Clonar el repositorio
 
 ```bash

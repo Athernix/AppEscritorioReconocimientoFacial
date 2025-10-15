@@ -1,3 +1,4 @@
+# Camara.py
 import cv2
 
 class Camara:
@@ -6,19 +7,26 @@ class Camara:
         self.captura = None
 
     def iniciar(self):
-        """Inicia la captura de video"""
+        """Inicia la captura con configuración optimizada"""
         self.captura = cv2.VideoCapture(self.index)
-        return self.captura.isOpened()
+        if self.captura.isOpened():
+            # Configuración para máximo rendimiento
+            self.captura.set(cv2.CAP_PROP_FRAME_WIDTH, 640)
+            self.captura.set(cv2.CAP_PROP_FRAME_HEIGHT, 480)
+            self.captura.set(cv2.CAP_PROP_FPS, 20)
+            self.captura.set(cv2.CAP_PROP_BUFFERSIZE, 1)  # Reducir buffer
+            return True
+        return False
 
     def obtener_frame(self):
-        """Obtiene un frame de la cámara"""
+        """Obtiene frame optimizado"""
         if self.captura and self.captura.isOpened():
             ret, frame = self.captura.read()
             return frame if ret else None
         return None
 
     def detener(self):
-        """Detiene la captura de video"""
+        """Detiene la captura"""
         if self.captura:
             self.captura.release()
             self.captura = None

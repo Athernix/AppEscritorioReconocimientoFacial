@@ -1,7 +1,9 @@
+# Ventana_Principal.py
 import cv2
 import json
 import os
 import numpy as np
+import sys
 from PySide6.QtWidgets import (
     QMainWindow, QLabel, QPushButton, QVBoxLayout, QHBoxLayout,
     QWidget, QGridLayout, QMessageBox, QInputDialog
@@ -10,7 +12,20 @@ from PySide6.QtCore import Qt, QTimer
 from PySide6.QtGui import QImage, QPixmap, QFont
 
 from Nucleo.Reconocimiento import ReconocimientoFacial
-from Nucleo.Camara import Camara
+from Nucleo.Camara import Camara  # asumo que tu Camara tiene métodos iniciar(), obtener_frame(), detener()
+
+# Import de la ventana de registro (robusto)
+try:
+    from Interfaz.ventana_registro import VentanaRegistro
+except Exception:
+    try:
+        project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+        interfaz_path = os.path.join(project_root, "Interfaz")
+        if interfaz_path not in sys.path:
+            sys.path.insert(0, interfaz_path)
+        from ventana_registro import VentanaRegistro
+    except Exception:
+        VentanaRegistro = None
 
 
 class VentanaPrincipal(QMainWindow):
@@ -21,32 +36,37 @@ class VentanaPrincipal(QMainWindow):
         self.setStyleSheet("background-color: #0d0d0d; color: white;")
 
         # ---------- Instancias de módulos ----------
-        self.reconocimiento = ReconocimientoFacial()
+        self.reconocimiento = ReconocimientoFacial(modelo="Facenet")
         self.camara = Camara()
-        
+
         # ---------- UI ----------
         self.setup_ui()
-        
+
         # ---------- Sistema de reconocimiento ----------
         self.timer = QTimer(self)
         self.timer.timeout.connect(self.actualizar_frame)
         self.boton_detener.setEnabled(False)
 
-        # Inicializar el reconocedor
-        self.face_recognizer = cv2.face.LBPHFaceRecognizer_create()
-        
+        # Variables UI/estado
+        self.nombre_detectado = QLabel("Desconocido")  # ya definido en setup_ui; redefinir por si acaso
+        # ---------- Datos de usuarios ----------
+        self.ruta_json = os.path.join("Datos", "usuarios.json")
+        os.makedirs("Datos", exist_ok=True)
+
+        # ---------- Embeddings dir ----------
+        self.embeddings_dir = os.path.join("Datos", "embeddings")
+        os.makedirs(self.embeddings_dir, exist_ok=True)
+
+        # Cargar vectores/usuarios
+        # Primero intento cargar vectores preguardados (Datos/embeddings)
+        self.reconocimiento.cargar_vectores()  # mantiene compatibilidad; puede cargar desde su propia ubicación
+        # Luego intento cargar desde Datos/embeddings (si recon no lo hizo)
+        self.cargar_rostros()
+
         # ---------- Eventos ----------
         self.boton_iniciar.clicked.connect(self.iniciar_camara)
         self.boton_detener.clicked.connect(self.detener_camara)
         self.boton_registro.clicked.connect(self.registrar_usuario)
-
-        # ---------- Variables para el reconocimiento ----------
-        self.rostros_entrenados = []
-        self.labels = []
-        self.nombres_dict = {}
-        
-        # Cargar rostros conocidos
-        self.cargar_rostros()
 
     def setup_ui(self):
         """Configura la interfaz de usuario"""
@@ -137,102 +157,112 @@ class VentanaPrincipal(QMainWindow):
         self.setCentralWidget(contenedor)
 
     def cargar_rostros(self):
-        """Carga todos los rostros conocidos y entrena el modelo"""
+        """
+        Carga embeddings desde Datos/embeddings si existen.
+        Si no existen, intenta extraer embeddings desde Datos/usuarios.json usando DeepFace,
+        y guarda los embeddings extraídos en Datos/embeddings para futuras ejecuciones.
+        """
         print("=" * 50)
-        print("🔄 INICIANDO CARGA DE ROSTROS...")
-        
-        ruta_json = "Datos/usuarios.json"
-        if not os.path.exists(ruta_json):
-            print("❌ No existe el archivo de usuarios")
-            os.makedirs("Datos", exist_ok=True)
-            with open(ruta_json, "w", encoding="utf-8") as f:
-                json.dump([], f)
+        print("🔄 INICIANDO CARGA DE ROSTROS/EMBEDDINGS...")
+
+        emb_path = os.path.join(self.embeddings_dir, "embeddings.npy")
+        names_path = os.path.join(self.embeddings_dir, "nombres.json")
+
+        # Si ya cargamos vectores previamente, no hacemos trabajo extra.
+        if len(self.reconocimiento.known_face_encodings) > 0:
+            print(f"ℹ️ Ya existen {len(self.reconocimiento.known_face_encodings)} embeddings cargados. Omitiendo re-extracción.")
+            print("=" * 50)
             return
 
-        with open(ruta_json, "r", encoding="utf-8") as f:
-            try:
+        # 1) Intentar cargar embeddings guardados
+        try:
+            if os.path.exists(emb_path) and os.path.exists(names_path):
+                print("ℹ️ Cargando embeddings guardados desde Datos/embeddings/ ...")
+                embs = np.load(emb_path, allow_pickle=True)
+                with open(names_path, "r", encoding="utf-8") as f:
+                    names = json.load(f)
+                if embs.ndim == 1:
+                    embs = np.expand_dims(embs, 0)
+                for emb, name in zip(embs, names):
+                    try:
+                        self.reconocimiento.known_face_encodings.append(np.array(emb, dtype=np.float32))
+                        self.reconocimiento.known_face_names.append(name)
+                    except Exception:
+                        pass
+                print(f"✅ Cargados {len(names)} embeddings desde carpeta de embeddings.")
+                print("=" * 50)
+                return
+        except Exception as e:
+            print(f"⚠️ Error cargando embeddings guardados: {e}")
+
+        # 2) Si no hay embeddings guardados, intentar procesar usuarios.json (compatibilidad backward)
+        if not os.path.exists(self.ruta_json):
+            print("❌ No existe el archivo de usuarios; se crea vacío.")
+            with open(self.ruta_json, "w", encoding="utf-8") as f:
+                json.dump([], f)
+            print("=" * 50)
+            return
+
+        try:
+            with open(self.ruta_json, "r", encoding="utf-8") as f:
                 usuarios = json.load(f)
-                print(f"📁 Usuarios en JSON: {len(usuarios)}")
-            except json.JSONDecodeError:
-                usuarios = []
-                print("❌ Error leyendo el archivo JSON")
+        except Exception as e:
+            print(f"❌ Error leyendo JSON usuarios: {e}")
+            usuarios = []
 
-        rostros = []
-        labels = []
-        nombres_dict = {}
-        label_id = 0
-
+        count = 0
         for usuario in usuarios:
-            ruta_rostro = usuario["rostro"]
-            nombre = usuario["nombre"]
-            print(f"🔍 Procesando: {nombre} -> {ruta_rostro}")
-            
-            if os.path.exists(ruta_rostro):
-                try:
-                    # Cargar imagen
-                    imagen = cv2.imread(ruta_rostro)
-                    if imagen is not None:
-                        print(f"   ✅ Imagen cargada - Tamaño: {imagen.shape}")
-                        
-                        # Convertir a escala de grises
-                        if len(imagen.shape) == 3:
-                            gray = cv2.cvtColor(imagen, cv2.COLOR_BGR2GRAY)
-                        else:
-                            gray = imagen
-                        
-                        # Mejorar contraste
-                        gray = cv2.equalizeHist(gray)
-                        
-                        # Detectar rostros
-                        faces = self.reconocimiento.detector.detectMultiScale(
-                            gray, 
-                            scaleFactor=1.1, 
-                            minNeighbors=5, 
-                            minSize=(30, 30)
-                        )
-                        
-                        print(f"   🔍 Rostros detectados: {len(faces)}")
-                        
-                        if len(faces) > 0:
-                            for (x, y, w, h) in faces:
-                                face_roi = gray[y:y+h, x:x+w]
-                                # Redimensionar
-                                face_roi = cv2.resize(face_roi, (200, 200))
-                                
-                                rostros.append(face_roi)
-                                labels.append(label_id)
-                                nombres_dict[label_id] = nombre
-                                label_id += 1
-                                print(f"   ✅ Rostro añadido - Label: {label_id-1}")
-                                break
-                        else:
-                            print(f"   ⚠️ No se detectó rostro en la imagen")
-                    else:
-                        print(f"   ❌ No se pudo cargar la imagen")
-                except Exception as e:
-                    print(f"   ❌ Error procesando imagen: {e}")
-            else:
-                print(f"   ❌ Archivo no existe: {ruta_rostro}")
+            ruta_rostro = usuario.get("rostro")
+            nombre = usuario.get("nombre", usuario.get("usuario", "Anonimo"))
+            if not ruta_rostro:
+                continue
 
-        # Entrenar el modelo si hay rostros
-        if rostros:
-            self.face_recognizer.train(rostros, np.array(labels))
-            self.rostros_entrenados = rostros
-            self.labels = labels
-            self.nombres_dict = nombres_dict
-            print(f"🎯 MODELO ENTRENADO CON {len(rostros)} ROSTROS")
-            print(f"📊 Labels: {labels}")
-            print(f"📊 Nombres: {nombres_dict}")
-        else:
-            self.rostros_entrenados = []
-            self.labels = []
-            self.nombres_dict = {}
-            print("⚠️ NO HAY ROSTROS PARA ENTRENAR")
+            # Resolver ruta absoluta posible
+            if not os.path.exists(ruta_rostro):
+                alt = os.path.abspath(os.path.join(os.path.dirname(__file__), ruta_rostro))
+                if os.path.exists(alt):
+                    ruta_rostro = alt
+                else:
+                    print(f"   ❌ Archivo no existe: {ruta_rostro}")
+                    continue
+
+            try:
+                # Importar DeepFace localmente (si está instalado)
+                from deepface import DeepFace
+                rep = DeepFace.represent(ruta_rostro, model_name=self.reconocimiento.modelo, enforce_detection=True)
+                if isinstance(rep, list) and len(rep) > 0:
+                    emb = np.array(rep[0]["embedding"], dtype=np.float32)
+                    self.reconocimiento.known_face_encodings.append(emb)
+                    self.reconocimiento.known_face_names.append(nombre)
+                    count += 1
+                    print(f"   ✅ Embedding añadido para {nombre}")
+            except Exception as e:
+                print(f"   ⚠️ No se pudo procesar {ruta_rostro}: {e}")
+
+        # Guardar vectores extraídos en carpeta embeddings para uso futuro
+        try:
+            if count > 0:
+                os.makedirs(self.embeddings_dir, exist_ok=True)
+                embs = np.array(self.reconocimiento.known_face_encodings, dtype=np.float32)
+                np.save(os.path.join(self.embeddings_dir, "embeddings.npy"), embs)
+                with open(os.path.join(self.embeddings_dir, "nombres.json"), "w", encoding="utf-8") as f:
+                    json.dump(self.reconocimiento.known_face_names, f, indent=4, ensure_ascii=False)
+                print("🔄 Embeddings guardados en Datos/embeddings/")
+        except Exception as e:
+            print(f"⚠️ No se pudieron guardar embeddings extraídos: {e}")
+
+        print(f"🎯 Finalizado. Embeddings cargados desde JSON: {count}")
         print("=" * 50)
 
     def iniciar_camara(self):
         """Inicia la cámara"""
-        if self.camara.iniciar():
+        try:
+            ok = self.camara.iniciar()
+        except Exception as e:
+            print(f"❌ Error iniciando cámara: {e}")
+            ok = False
+
+        if ok:
             self.timer.start(30)
             self.boton_iniciar.setEnabled(False)
             self.boton_detener.setEnabled(True)
@@ -242,83 +272,62 @@ class VentanaPrincipal(QMainWindow):
             print("❌ ERROR AL INICIAR CÁMARA")
 
     def actualizar_frame(self):
-        """Actualiza el frame de la cámara y realiza reconocimiento facial"""
+        """Obtiene frame, detecta y reconoce con embeddings cargados"""
         frame = self.camara.obtener_frame()
         if frame is None:
             return
 
-        # Convertir a escala de grises
-        gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-        gray_eq = cv2.equalizeHist(gray)
-        
-        # Detectar rostros
-        faces = self.reconocimiento.detector.detectMultiScale(
-            gray_eq, 
-            scaleFactor=1.1, 
-            minNeighbors=5, 
-            minSize=(50, 50)
-        )
+        # Usar detector Haar para detección y luego embeddings para reconocimiento
+        boxes, names = self.reconocimiento.reconocer_rostro(frame, umbral_coseno=0.45, usar_detector_haar=True)
 
-        nombre_detectado = "Desconocido"
+        nombre_mostrar = "Desconocido"
         color_acceso = "red"
         rol = "VISITANTE"
-        confianza = 0
+        confianza_txt = ""
 
-        for (x, y, w, h) in faces:
-            # Extraer y preprocesar rostro
-            face_roi = gray[y:y+h, x:x+w]
-            face_roi = cv2.resize(face_roi, (200, 200))
-            face_roi = cv2.equalizeHist(face_roi)
+        for (top, right, bottom, left), name in zip(boxes, names):
+            if name != "Desconocido":
+                nombre_mostrar = name
+                rol = "USUARIO REGISTRADO"
+                color_acceso = "green"
+                confianza_txt = ""
+            else:
+                nombre_mostrar = "Desconocido"
+                rol = "VISITANTE"
+                color_acceso = "red"
 
-            # Intentar reconocer si hay modelo entrenado
-            if self.rostros_entrenados:
-                try:
-                    label, confidence = self.face_recognizer.predict(face_roi)
-                    confianza = confidence
-                    
-                    print(f"🔍 Predicción - Label: {label}, Confianza: {confidence:.1f}")
-                    
-                    # LBPH: valores más bajos = mayor confianza
-                    # PRUEBA DIFERENTES UMBRALES AQUÍ:
-                    if confidence < 70:  # ← CAMBIA ESTE VALOR SI ES NECESARIO
-                        if label in self.nombres_dict:
-                            nombre_detectado = self.nombres_dict[label]
-                            rol = "USUARIO REGISTRADO"
-                            color_acceso = "green"
-                            print(f"✅ RECONOCIDO: {nombre_detectado} (Confianza: {confidence:.1f})")
-                        else:
-                            print(f"⚠️ Label {label} no encontrado en el diccionario")
-                    else:
-                        print(f"❌ NO RECONOCIDO - Confianza muy alta: {confidence:.1f}")
-                        
-                except Exception as e:
-                    print(f"❌ ERROR EN PREDICCIÓN: {e}")
-
-            # Dibujar en frame
             color = (0, 255, 0) if color_acceso == "green" else (0, 0, 255)
-            cv2.rectangle(frame, (x, y), (x+w, y+h), color, 2)
-            cv2.putText(frame, f"{nombre_detectado} ({confianza:.1f})", 
-                       (x, y-10), cv2.FONT_HERSHEY_SIMPLEX, 0.6, color, 2)
+            try:
+                cv2.rectangle(frame, (left, top), (right, bottom), color, 2)
+                cv2.putText(frame, f"{nombre_mostrar}", (left, top-10), cv2.FONT_HERSHEY_SIMPLEX, 0.6, color, 2)
+            except Exception:
+                pass
 
         # Actualizar UI
-        self.nombre_detectado.setText(nombre_detectado)
+        self.nombre_detectado.setText(nombre_mostrar)
         self.lbl_rol.setText(rol)
         estado = "PERMITIDO" if color_acceso == "green" else "DENEGADO"
         self.lbl_estado.setText(estado)
         self.lbl_estado.setStyleSheet(f"color: {color_acceso};")
 
-        # Mostrar frame
-        rgb_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-        h, w, ch = rgb_frame.shape
-        bytes_per_line = ch * w
-        qt_image = QImage(rgb_frame.data, w, h, bytes_per_line, QImage.Format_RGB888)
-        self.label_video.setPixmap(QPixmap.fromImage(qt_image.scaled(
-            self.label_video.width(), self.label_video.height(), Qt.KeepAspectRatio)))
+        # Mostrar frame en QLabel
+        try:
+            rgb_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+            h, w, ch = rgb_frame.shape
+            bytes_per_line = ch * w
+            qt_image = QImage(rgb_frame.data, w, h, bytes_per_line, QImage.Format_RGB888)
+            self.label_video.setPixmap(QPixmap.fromImage(qt_image.scaled(
+                self.label_video.width(), self.label_video.height(), Qt.KeepAspectRatio)))
+        except Exception as e:
+            print(f"❌ Error mostrando frame en UI: {e}")
 
     def detener_camara(self):
         """Detiene la cámara"""
         self.timer.stop()
-        self.camara.detener()
+        try:
+            self.camara.detener()
+        except Exception:
+            pass
         self.label_video.clear()
         self.label_video.setText("Cámara detenida")
         self.boton_iniciar.setEnabled(True)
@@ -326,45 +335,37 @@ class VentanaPrincipal(QMainWindow):
         print("⏹️ CÁMARA DETENIDA")
 
     def registrar_usuario(self):
-        """Registra un nuevo usuario"""
-        self.detener_camara()
-
-        nombre, usuario, contrasena = self.solicitar_datos_usuario()
-        if not nombre:
+        """
+        Cierra la ventana principal y abre la nueva ventana de registro de usuario.
+        """
+        if 'VentanaRegistro' not in globals() or VentanaRegistro is None:
+            QMessageBox.critical(
+                self,
+                "Error",
+                "No se encontró la ventana de registro.\n"
+                "Verifica que 'Interfaz/ventana_registro.py' exista y sea importable."
+            )
             return
 
-        # Crear directorios si no existen
-        os.makedirs("Datos/rostros", exist_ok=True)
-        ruta_rostro = f"Datos/rostros/{usuario}.png"
+        try:
+            self.ventana_registro = VentanaRegistro()
+        except Exception as e:
+            QMessageBox.critical(
+                self,
+                "Error al abrir ventana de registro",
+                f"No se pudo crear la ventana de registro:\n{e}"
+            )
+            return
 
-        print(f"📸 INICIANDO CAPTURA PARA: {nombre}")
-        resultado = self.reconocimiento.capturar_rostro(ruta_rostro)
-        
-        if resultado and os.path.exists(ruta_rostro):
-            # Verificar que la imagen es válida y contiene un rostro
-            img = cv2.imread(ruta_rostro)
-            if img is not None:
-                # Verificar si contiene un rostro
-                gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY) if len(img.shape) == 3 else img
-                faces = self.reconocimiento.detector.detectMultiScale(gray, 1.1, 5)
-                
-                if len(faces) > 0:
-                    self.guardar_usuario_json(nombre, usuario, contrasena, ruta_rostro)
-                    QMessageBox.information(self, "Éxito", f"Usuario {usuario} registrado correctamente!")
-                    
-                    # Recargar el modelo con el nuevo usuario
-                    print("🔄 RECARGANDO MODELO CON NUEVO USUARIO...")
-                    self.cargar_rostros()
-                else:
-                    QMessageBox.warning(self, "Error", "No se detectó un rostro en la imagen capturada.")
-                    if os.path.exists(ruta_rostro):
-                        os.remove(ruta_rostro)
-            else:
-                QMessageBox.warning(self, "Error", "La imagen capturada no es válida")
-                if os.path.exists(ruta_rostro):
-                    os.remove(ruta_rostro)
-        else:
-            QMessageBox.warning(self, "Error", "No se pudo capturar el rostro")
+        try:
+            self.ventana_registro.show()
+            self.close()
+        except Exception as e:
+            QMessageBox.critical(
+                self,
+                "Error al mostrar ventana de registro",
+                f"No se pudo mostrar la ventana de registro:\n{e}"
+            )
 
     def solicitar_datos_usuario(self):
         """Solicita los datos del usuario mediante diálogos"""
@@ -381,8 +382,8 @@ class VentanaPrincipal(QMainWindow):
 
     def guardar_usuario_json(self, nombre, usuario, contrasena, ruta_rostro):
         """Guarda el usuario en el archivo JSON"""
-        ruta_json = "Datos/usuarios.json"
-        
+        ruta_json = self.ruta_json
+
         if os.path.exists(ruta_json):
             with open(ruta_json, "r", encoding="utf-8") as f:
                 try:
@@ -394,7 +395,7 @@ class VentanaPrincipal(QMainWindow):
 
         # Verificar si el usuario ya existe
         for user in datos:
-            if user["usuario"] == usuario:
+            if user.get("usuario") == usuario:
                 QMessageBox.warning(self, "Error", "El usuario ya existe")
                 return
 
@@ -415,3 +416,12 @@ class VentanaPrincipal(QMainWindow):
         """Maneja el cierre de la aplicación"""
         self.detener_camara()
         event.accept()
+
+
+# Si deseas ejecutar esta ventana directamente para pruebas:
+if __name__ == "__main__":
+    from PySide6.QtWidgets import QApplication
+    app = QApplication(sys.argv)
+    ventana = VentanaPrincipal()
+    ventana.show()
+    sys.exit(app.exec())
