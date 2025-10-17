@@ -19,7 +19,7 @@ Además, se prioriza una **interfaz intuitiva, profesional y adaptable**, acompa
 - Desarrollar una herramienta que permita la **detección, registro y autenticación de rostros humanos**.
 - Implementar una **interfaz amigable y funcional**, optimizada para usuarios finales no técnicos.
 - Diseñar una estructura de código **escalable y mantenible**, siguiendo buenas prácticas de desarrollo.
-- Integrar una **base de datos local** para el almacenamiento seguro de usuarios y vectores faciales.
+- Integrar una **base de datos en PostgreSQL** para el almacenamiento seguro de usuarios y vectores faciales.
 - Explorar el uso de **modelos de visión por computadora** para la detección facial eficiente en tiempo real.
 
 ---
@@ -29,7 +29,7 @@ Además, se prioriza una **interfaz intuitiva, profesional y adaptable**, acompa
 - 📷 **Captura de video en tiempo real** usando la cámara del dispositivo con OpenCV.  
 - 😎 **Detección y reconocimiento facial** mediante modelos Haarcascade o embeddings personalizados.  
 - 🧑‍💼 **Registro de nuevos usuarios** con almacenamiento de imágenes y vectores de características.  
-- 🔒 **Inicio de sesión facial o con credenciales convencionales.**  
+- 🔒 **Entarada y Acceso del Usuario**  
 - 🎨 **Interfaz moderna, personalizable y responsiva** usando PySide6 y estilos `.qss`.  
 - 🗃️ **Base de datos** para gestionar usuarios, configuraciones y registros faciales.  
 - ⚙️ **Código modular y documentado**, optimizado para futuras mejoras.  
@@ -225,8 +225,8 @@ python aplicacion/main.py
 | **PySide6**      | Framework para interfaces gráficas (Qt for Python) |
 | **OpenCV**       | Biblioteca para visión por computadora             |
 | **NumPy**        | Procesamiento numérico y matricial                 |
-| **SQLite**       | Base de datos local integrada                      |
-
+| **PostgreSQL**       | Base de datos local integrada                      |
+|**DeepFace**		| Libreria de Reconocimiento facial         		|
 ## 👥 Autores
 | Nombre                             | Rol                                                   |
 | ---------------------------------- | ----------------------------------------------------- |
