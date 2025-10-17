@@ -130,10 +130,10 @@ sudo apt-get install -y libgl1-mesa-glx libglib2.0-0 libsm6 libxext6 libxrender-
 Crea un archivo **`requirements.txt`** con el siguiente contenido:
 
 ```
-opencv-python==4.8.1.78
-PySide6==6.7.0
-numpy==1.26.0
-deepface==0.0.89
+opencv-python
+PySide6
+numpy
+deepface
 ```
 
 ---
@@ -146,13 +146,13 @@ Instalar todas las dependencias de una sola vez:
 pip install -r requirements.txt
 ```
 
-O instalarlas individualmente:
+O instalarlas individualmente (Mejor Opción):
 
 ```bash
-pip install opencv-python==4.8.1.78
-pip install PySide6==6.7.0
-pip install numpy==1.26.0
-pip install deepface==0.0.89
+pip install opencv-python
+pip install PySide6
+pip install numpy
+pip install deepface
 ```
 
 
