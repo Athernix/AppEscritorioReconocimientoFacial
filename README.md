@@ -158,6 +158,12 @@ pip install deepface
 
 ## ⚠️ Notas importantes
 
+### Instalación de Visual Studio
+- Descargar Visual Studio Community
+- Link de visual: https://visualstudio.microsoft.com/es/downloads/?cid=learn-navbar-download-cta
+- Descargar unicamanete el de c++ para desarollo en escritorio **10 GB de Almacenamiento Libres**.
+
+
 ### Sobre DeepFace
 - DeepFace instalará automáticamente dependencias como TensorFlow.
 - La primera ejecución puede ser lenta, ya que descargará modelos pre-entrenados.
@@ -172,6 +178,7 @@ pip install deepface
 - Mínimo **4 GB de RAM**.
 - Cámara web funcionando.
 - Espacio en disco para modelos de DeepFace (~500 MB).
+- Espacio de disco mas de **10 GB ** libre para la instalación de Visual Studio en c++
 
 ---
 
