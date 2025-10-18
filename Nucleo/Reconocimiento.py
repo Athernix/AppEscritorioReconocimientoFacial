@@ -1,14 +1,4 @@
 # Nucleo/Reconocimiento.py
-"""
-Reconocimiento facial basado en DeepFace (no usa dlib).
-Clase: ReconocimientoFacial
-Métodos principales usados por la UI:
- - capturar_rostro(ruta_destino) -> True/False (captura una imagen desde la cámara y la guarda)
- - entrenar_desde_carpeta(carpeta_entrenamiento) -> extrae embeddings y los guarda
- - cargar_vectores() -> carga vectores guardados (pickle)
- - reconocer_rostro(frame_bgr, umbral_coseno=0.45) -> (boxes, names)
- - detector -> Haar Cascade (para compatibilidad con el resto del código)
-"""
 
 import os
 import cv2
